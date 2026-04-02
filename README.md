@@ -203,9 +203,165 @@ Ces commandes sont utiles pour **gérer les disques, partitions, volumes** (typi
 
 ---
 
-## Pipeline et filtres
+Pipeline et filtres
+Le pipeline (|) est un des points forts de PowerShell : il permet de passer des objets (pas juste du texte) d’une commande à l’autre, pour les filtrer, trier ou transformer sans avoir à tout retaper.
 
-Le **pipeline** (`|`) est un des points forts de PowerShell : il permet de **passer des objets** d’une commande à l’autre, plutôt que juste du texte.
+Commande	Utilité / explication	Exemple
+Where-Object	Permet de filtrer les objets selon une condition. Très utile pour ne garder que les processus, services ou fichiers qui t’intéressent.	Get-Process \| Where-Object {$_.CPU -gt 10}
+Select-Object	Permet de choisir seulement certaines propriétés d’un objet (ex : Name, CPU, Status). Limite la sortie à l’essentiel.	Get-Process \| Select-Object Name, CPU
+Sort-Object	Trie les résultats (par nom, CPU, taille, etc.). Très utile pour lister les processus les plus lourds, par exemple.	Get-Process \| Sort-Object CPU -Descending
+Measure-Object	Compte ou calcule des statistiques (nombre d’éléments, somme, moyenne, min, max). Idéal pour compter des fichiers, mesurer des tailles, etc.	Get-ChildItem \| Measure-Object
+ForEach-Object	Applique une action à chaque élément du pipeline (ex : afficher un nom, extraire une info, modifier un fichier).	Get-ChildItem \| ForEach-Object {$_.Name}
+Exemples concrets :
 
-| Commande | Utilité / explication | Exemple |
-|---|---|---|
+powershell
+# Filtrer les processus ayant un CPU > 5
+Get-Process | Where-Object {$_.CPU -gt 5}
+
+# Afficher seulement nom et CPU triés par CPU descendant
+Get-Process | Select-Object Name, CPU | Sort-Object CPU -Descending
+
+# Compter le nombre de fichiers dans un dossier
+Get-ChildItem | Measure-Object
+Script et logique
+Ici, on parle de structures de contrôle et de syntaxe de base pour écrire des scripts PowerShell réutilisables, lisibles et robustes.
+
+Élément	Utilité / explication	Exemple
+Variables	Stockent une valeur pour la réutiliser plus tard. En PowerShell, toute variable commence par $.	$nom = "Ali"
+Commentaire	Ajoute un commentaire dans le script, ignoré pendant l’exécution.	# Ceci est un commentaire
+if	Exécute un bloc de code seulement si la condition est vraie.	if ($age -ge 18) { "Majeur" }
+else	Exécute un bloc si la condition est fausse.	if ($age -ge 18) { "Majeur" } else { "Mineur" }
+elseif	Ajoute une autre condition entre if et else.	if ($x -gt 10) { "Grand" } elseif ($x -eq 10) { "Égal" } else { "Petit" }
+switch	Compare une valeur avec plusieurs cas possibles, plus lisible que plusieurs if.	switch ($jour) { "Lundi" { "Début semaine" } "Vendredi" { "Fin semaine" } default { "Autre" } }
+for	Boucle qui répète un nombre de fois fixe (avec un compteur).	for ($i=1; $i -le 5; $i++) { Write-Host "Tour $i" }
+foreach	Parcourt une collection (liste, fichiers, etc.). Très intuitif.	foreach ($fichier in Get-ChildItem) { Write-Host $fichier.Name }
+while	Boucle tant qu’une condition reste vraie. Utile pour les attentes ou répétitions indéfinies.	$i=1; while ($i -le 3) { $i; $i++ }
+do { } while	Exécute au moins une fois, puis recommence tant que la condition est vraie.	$i=1; do { $i; $i++ } while ($i -le 3)
+break	Sort immédiatement d’une boucle.	break
+continue	Passe à l’itération suivante sans exécuter la suite du bloc.	continue
+function	Crée une fonction réutilisable. Tu peux l’appeler plusieurs fois.	function Bonjour { param($Nom) Write-Host "Bonjour $Nom" }
+param	Définit les paramètres d’un script ou d’une fonction. Rend le script plus flexible.	param([string]$Nom)
+return	Renvoie une valeur depuis une fonction ou script.	return $resultat
+try/catch	Permet de gérer les erreurs sans planter le script. Très utile en prod.	try { Get-Content .\fichier.txt } catch { "Erreur" }
+finally	Code qui s’exécute toujours, même si tu as une erreur.	finally { "Terminé" }
+Exemples de scripts simples
+powershell
+# 1) if simple
+$age = 20
+
+if ($age -ge 18) {
+    Write-Host "Majeur"
+} else {
+    Write-Host "Mineur"
+}
+
+# 2) foreach boucle
+$fichiers = Get-ChildItem
+
+foreach ($fichier in $fichiers) {
+    Write-Host $fichier.Name
+}
+
+# 3) for boucle
+for ($i = 1; $i -le 5; $i++) {
+    Write-Host "Tour $i"
+}
+
+# 4) fonction simple
+function Bonjour {
+    param([string]$Nom)
+    Write-Host "Bonjour $Nom"
+}
+
+Bonjour -Nom "Sara"
+
+# 5) gestion d’erreur (try/catch/finally)
+try {
+    Get-Content .\fichier.txt
+} catch {
+    Write-Host "Le fichier n'existe pas ou est inaccessible."
+} finally {
+    Write-Host "Fin du traitement."
+}
+Mise à jour
+Permet de gérer les mises à jour Windows et les applications installées.
+
+Commande / Outil	Utilité / explication	Exemple
+Install-Module	Installe un module PowerShell depuis la galerie (PowerShellGallery, PSGallery).	Install-Module PSWindowsUpdate -Scope CurrentUser
+Import-Module	Charge un module dans la session PowerShell. Obligatoire après l’installation.	Import-Module PSWindowsUpdate
+Get-Module	Liste les modules installés ou chargés. Utile pour vérifier qu’un module est bien présent.	Get-Module -ListAvailable
+Get-WindowsUpdate	Recherche les mises à jour Windows (KB, cumulatives, etc.) via le module PSWindowsUpdate.	Get-WindowsUpdate -MicrosoftUpdate
+Install-WindowsUpdate	Installe les mises à jour trouvées. Très pratique pour automatiser les updates.	Install-WindowsUpdate -AcceptAll -AutoReboot
+Get-WindowsUpdateLog	Génère ou affiche le journal de Windows Update. Utile pour le dépannage.	Get-WindowsUpdateLog
+Get-HotFix	Affiche les correctifs (patches) Windows installés.	Get-HotFix
+winget upgrade	Met à jour toutes les applications installées via WinGet.	winget upgrade
+Exemple typique :
+
+powershell
+# Installer le module pour gérer les updates
+Install-Module PSWindowsUpdate -Scope CurrentUser
+Import-Module PSWindowsUpdate
+
+# Chercher puis installer les mises à jour
+Get-WindowsUpdate -MicrosoftUpdate
+Install-WindowsUpdate -AcceptAll -AutoReboot
+Sécurité avancée
+Cette section couvre les paramètres de sécurité, les scans, le pare‑feu et la gestion des scripts.
+
+Commande	Utilité / explication	Exemple
+Get-ExecutionPolicy	Affiche la politique de sécurité pour les scripts PowerShell. Contrôle qui peut exécuter des scripts.	Get-ExecutionPolicy
+Get-ExecutionPolicy -List	Affiche les politiques par portée (Machine, User, etc.). Utile pour audit.	Get-ExecutionPolicy -List
+Set-ExecutionPolicy	Modifie la politique. Exemple courant : RemoteSigned pour autoriser les scripts locaux.	Set-ExecutionPolicy RemoteSigned
+Unblock-File	Débloque un fichier téléchargé marqué comme non sécurisé (ex : .ps1 ou logiciel).	Unblock-File .\script.ps1
+Get-MpComputerStatus	Donne l’état de Microsoft Defender (l’antivirus intégré Windows).	Get-MpComputerStatus
+Start-MpScan	Lance un scan Defender (Quick, Full, etc.).	Start-MpScan -ScanType QuickScan
+Get-NetFirewallProfile	Affiche l’état des profils de pare‑feu (Public, Privé, Domaine).	Get-NetFirewallProfile
+Get-NetFirewallRule	Liste toutes les règles de pare‑feu. Très utile pour audit de sécurité.	Get-NetFirewallRule
+Enable-NetFirewallRule	Active une règle de pare‑feu.	Enable-NetFirewallRule -DisplayName "..."
+Disable-NetFirewallRule	Désactive une règle de pare‑feu.	Disable-NetFirewallRule -DisplayName "..."
+Packages et modules
+PowerShell permet d’installer des modules et outils tiers pour étendre ses capacités (administration Azure, Microsoft 365, Excel, etc.).
+
+Nom / Module	Utilité / explication	Installation
+PSWindowsUpdate	Gestion des mises à jour Windows via PowerShell.	Install-Module PSWindowsUpdate -Scope CurrentUser
+Pester	Framework de tests PowerShell (unit tests, tests de scripts).	Install-Module Pester -Scope CurrentUser
+Az	Module pour administrer Azure (machines virtuelles, RG, etc.).	Install-Module Az -Scope CurrentUser
+Microsoft.Graph	Module pour administrer Microsoft 365 (Exchange Online, Azure AD, etc.).	Install-Module Microsoft.Graph -Scope CurrentUser
+ImportExcel	Permet de lire/écrire des fichiers Excel sans Excel installé.	Install-Module ImportExcel -Scope CurrentUser
+BurntToast	Permet d’afficher des notifications toast sous Windows.	Install-Module BurntToast -Scope CurrentUser
+PSReadLine	Améliore la console (couleurs, autocomplétion, historique).	Install-Module PSReadLine -Scope CurrentUser
+PowerShellGet	Gère le dépôt de modules et la mise à jour de PowerShellGet lui‑même.	Install-Module PowerShellGet -Scope CurrentUser
+Applications utiles avec winget
+winget est le gestionnaire de paquets officiel Windows. Très pratique pour installer ou mettre à jour des logiciels en ligne de commande.
+
+Application	Utilité / explication	Commande
+Google Chrome	Navigateur web moderne.	winget install Google.Chrome
+7-Zip	Outil de compression/décompression.	winget install 7zip.7zip
+VLC	Lecteur multimédia polyvalent.	winget install VideoLAN.VLC
+Notepad++	Éditeur de texte avancé.	winget install Notepad++.Notepad++
+Git	Versioning de code (Git pour Windows).	winget install Git.Git
+Python	Langage de script très utilisé.	winget install Python.Python.3
+Visual Studio Code	Éditeur de code très populaire.	winget install Microsoft.VisualStudioCode
+Microsoft PowerToys	Utilitaires système Windows (PowerToys, gestion de fenêtres, etc.).	winget install Microsoft.PowerToys
+Exemples d’usage :
+
+powershell
+# Rechercher un logiciel
+winget search chrome
+
+# Installer une application
+winget install Google.Chrome
+
+# Mettre à jour toutes les apps installées
+winget upgrade
+Commandes à retenir (mini révision)
+Catégorie	Commandes clés
+Général	Get-Help, Get-Command, Get-Alias, Get-Host, Get-Date
+Navigation	Get-Location, Set-Location, Get-ChildItem, Push-Location, Pop-Location
+Fichiers	Get-Content, Set-Content, Add-Content, Copy-Item, Move-Item, Remove-Item
+Utilisateurs / groupes	Get-LocalUser, New-LocalUser, Get-LocalGroup, Add-LocalGroupMember
+Permissions / sécurité	Get-Acl, Set-ExecutionPolicy, Unblock-File, Get-MpComputerStatus
+Réseau	Test-Connection, Test-NetConnection, Get-NetIPAddress, Get-NetIPConfiguration
+Script / logique	if, foreach, for, while, try/catch, function, param
+Mise à jour	Install-Module, Get-WindowsUpdate, Install-WindowsUpdate, winget upgrade
+
